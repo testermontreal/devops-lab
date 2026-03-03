@@ -1,0 +1,35 @@
+# === Security ===
+# These files shoud never be included into git — credentials leak
+*.env
+.env*
+.env.local
+secrets/
+*.pem
+*.key
+*.p12
+*_rsa
+*_ed25519
+!*.pub          # Exeptions - public keys
+
+# === Operating system ===
+.DS_Store        # macOS metadata
+Thumbs.db        # Windows thumbnails
+*~               # Vim backup files
+*.swp            # Vim swap files
+
+# === Code editors ===
+.vscode/settings.json   # personal settings VS Code (not team settings)
+.idea/                  # JetBrains IDE
+
+# === PYTHON ===
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+
+# === TERRAFORM ===
+*.tfstate
+*.tfstate.backup
+.terraform/
