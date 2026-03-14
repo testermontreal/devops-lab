@@ -17,7 +17,3 @@ Linux · Git · Docker · Terraform · Ansible · Kubernetes · AWS
 | `runbooks/` | Operational procedures               |
 | `pipelines/`| CI/CD YAML                           |
 | `confluence/`| Page templates                      |
-
-## Progress
-- [x] Day 1: Git foundations + GitHub SSH
-- [ ] Day 2: Linux filesystem & text tools

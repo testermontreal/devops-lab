@@ -1,13 +1,23 @@
-⚡ Linux FHS — Cheatsheet (День 2)
+# ⚡ Linux FHS — Cheatsheet (День 2)
 
-"Where would you find application configuration files on Linux?" — это не вопрос памяти.
+**"Where would you find application configuration files on Linux?"** — это не вопрос памяти.
 Это проверка того, понимаешь ли ты принцип разделения данных по изменчивости (principle of data mutability separation):
 
-Неизменяемые двоичные файлы (immutable binaries) → /usr/bin, /usr/lib
-Изменяемые конфиги (mutable configuration) → /etc
-Изменяемые данные во время работы (runtime variable data) → /var
-Временные данные (ephemeral/temporary data) → /tmp, /run
-Виртуальные интерфейсы к ядру (kernel virtual interfaces) → /proc, /sys
+Неизменяемые двоичные файлы **(immutable binaries) → /usr/bin, /usr/lib**
+
+---
+Изменяемые конфиги **(mutable configuration) → /etc**
+
+---
+Изменяемые данные во время работы **(runtime variable data) → /var**
+
+---
+Временные данные **(ephemeral/temporary data) → /tmp, /run**
+
+---
+Виртуальные интерфейсы к ядру 88(kernel virtual interfaces) → /proc, /sys**
+
+---
 
 # Полная карта FHS с interview-ready объяснениями
 
@@ -32,46 +42,117 @@
 | /run              | Данные времени выполнения (runtime data)                     | "PID files, sockets, locks created since last boot. Cleared on every reboot. sshd stores its PID at /run/sshd.pid."                                      |
 | /srv              | Данные сервисов (service data)                               | "Data served by the system: web files for Nginx would go in /srv/www. Often empty on desktops."                                                          |
 
+---
+
+## FHS Key Directories
+
+| Directory | Purpose | Example contents |
+|-----------|---------|-----------------|
+| /etc | System-wide configuration | sshd_config, fstab, hosts |
+| /var/log | Application & system logs | syslog, auth.log, nginx/ |
+| /tmp | Temporary files (cleared on reboot) | Ephemeral caches |
+| /proc | Kernel & process virtual FS | /proc/1/, /proc/cpuinfo |
+| /opt | Third-party software | ProtonVPN, JetBrains |
+| /mnt | Manual mount points | /mnt/shared, /mnt/timeshift |
+
+---
+![aa415b3a25a278b84e88cc7497dffdc9.png](:/4b1cb31e0fea46f88efa989bc5b9646d)
+
+---
+&nbsp;
+
+![35aea108cf630953964f53c68a3226cd.png](:/05d00ad4fbab455ab3b8d523e136bd3a)
+
+&nbsp;
+
+---
 
 # Навигация и исследование
+
+```bash
 ls -lah /etc           # все файлы с размерами
 ls -laht /var/log      # по времени, свежие сверху
 stat /etc/passwd       # полная метаинформация + timestamps
 file /usr/bin/python3  # тип файла (ELF binary, script, etc.)
 which git              # где находится бинарник
 type ls                # alias, builtin или file?
+```
 
 # find — поиск файлов
+
+```bash
 find /etc -name "*.conf"              # по имени
 find /var/log -size +10M              # большие файлы
 find /etc -mtime -1                   # изменённые за 24 часа
 find /tmp -perm -o+w -type f         # world-writable (security!)
 find / -perm -4000 2>/dev/null       # SUID файлы
 find /etc -type f -exec grep -l "ssh" {} \;  # файлы содержащие "ssh"
+```
 
 # Дисковое пространство
+
+```bash
 df -hT | grep -v tmpfs | grep -v loop  # реальные разделы
 du -sh ~                               # размер домашней директории
 du -h --max-depth=1 /var | sort -rh | head -10  # топ поддиректорий
+```
 
 # Текстовые инструменты
+
+```bash
 cat -n файл                    # с номерами строк
 less /var/log/syslog           # постраничный просмотр
 tail -f /var/log/auth.log      # live monitoring
 head -20 /var/log/syslog       # первые 20 строк
+```
 
 # grep — поиск по содержимому
+
+```bash
 grep -rn "pattern" /etc/       # рекурсивно с номерами строк
 grep -v "^#" файл | grep -v "^$"  # убрать комментарии и пустые строки
 grep -E "error|warn" /var/log/syslog  # OR-паттерн
 grep -c "pattern" файл         # посчитать совпадения
 journalctl -b 0 -p err         # системные ошибки с последней загрузки
+```
 
 # Потоки (Streams)
+
+```bash
 команда > файл       # stdout в файл (перезаписать)
 команда >> файл      # stdout в файл (добавить)
 команда 2>/dev/null  # выбросить stderr
 команда &> файл      # stdout + stderr в файл
 cmd1 | cmd2          # stdout cmd1 → stdin cmd2
 cmd | tee файл       # и в файл, и на экран
+```
 
+---
+
+## 🎤 Interview Prep
+
+Q: "Walk me through the Linux filesystem structure."
+RU: Расскажи про структуру файловой системы Linux.
+
+EN: "Linux follows the FHS — Filesystem Hierarchy Standard. The key principle is separating data by mutability: immutable binaries go to /usr, mutable configuration to /etc, runtime variable data to /var, and ephemeral data to /tmp. Two special directories — /proc and /sys — aren't real filesystems; they're virtual interfaces to the running kernel."
+
+---
+Q: "What's the difference between /proc and /sys?"
+RU: В чём разница между /proc и /sys?
+
+EN: "/proc is the older interface — it exposes process information and kernel parameters, but the structure is somewhat unorganized. /sys — sysfs — was introduced later with a cleaner, hierarchical structure for hardware and driver information. In practice: /proc/cpuinfo for CPU data, /proc/PID/ for process details; /sys/class/net/ for network interfaces, /sys/block/ for block devices."
+
+---
+Q: apt install nginx: куда ставятся файлы?
+
+| Директория                        | Что туда попадёт                                      |
+| --------------------------------- | ----------------------------------------------------- |
+| /usr/sbin/nginx                   | Основной бинарник (executable)                        |
+| /etc/nginx/                       | Конфиги: nginx.conf, sites-available/, sites-enabled/ |
+| /var/log/nginx/                   | Логи: access.log, error.log                           |
+| /var/www/html/                    | Дефолтный корень сайта (document root)                |
+| /lib/systemd/system/nginx.service | Systemd unit-файл                                     |
+| /usr/share/doc/nginx/             | Документация                                          |
+RU: apt install nginx распределяет файлы по FHS: бинарник идёт в /usr/sbin/nginx, конфиги — в /etc/nginx/ (главный файл nginx.conf + директории sites-available и sites-enabled), логи — в /var/log/nginx/. Ещё создаётся systemd unit в /lib/systemd/system/nginx.service. Это стандарт для любого пакета в Debian/Ubuntu.
+
+EN: "When you apt install nginx, files are distributed per FHS: the binary lands in /usr/sbin/nginx, configuration in /etc/nginx/ with nginx.conf and the sites-available/sites-enabled pattern for virtual hosts, runtime logs in /var/log/nginx/access.log and error.log, and a systemd unit at /lib/systemd/system/nginx.service. Knowing this layout matters when troubleshooting — if nginx fails to start, I check /etc/nginx/ first with nginx -t, then /var/log/nginx/error.log."
